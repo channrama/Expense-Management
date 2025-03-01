@@ -3,12 +3,15 @@ import axios from 'axios';
 
 export default function ShowCompanies() {
   const [companies, setCompanies] = useState([]);
+  const [filterKeyword, setFilterKeyword] = useState('');
+  const [filteredCompanies, setFilteredCompanies] = useState([]);
 
   useEffect(() => {
     const fetchCompanies = async () => {
       try {
         const response = await axios.get('http://localhost:8080/api/startup-company/show');
         setCompanies(response.data);
+        setFilteredCompanies(response.data);
       } catch (error) {
         console.error('Error fetching companies:', error);
       }
@@ -17,6 +20,16 @@ export default function ShowCompanies() {
     fetchCompanies();
   }, []);
 
+  useEffect(() => {
+    const keyword = filterKeyword.toLowerCase();
+    const filtered = companies.filter((company) => {
+      return Object.values(company).some((value) =>
+        value.toString().toLowerCase().includes(keyword)
+      );
+    });
+    setFilteredCompanies(filtered);
+  }, [filterKeyword, companies]);
+
   const handleCollaborate = (companyId) => {
     alert(`Collaboration request sent for company ID: ${companyId}`);
     // Implement collaboration logic (e.g., API call)
@@ -24,9 +37,22 @@ export default function ShowCompanies() {
 
   return (
     <div className="p-8 bg-gray-50 min-h-screen">
-      <h1 className="text-2xl font-semibold text-center mb-10 text-gray-800">Collaborate with Companies</h1>
+      <h1 className="text-2xl font-semibold text-center mb-6 text-gray-800">Collaborate with Companies</h1>
+
+      {/* Filter Input */}
+      <div className="mb-6">
+        <input
+          type="text"
+          placeholder="Search companies by any field"
+          className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-gray-400"
+          value={filterKeyword}
+          onChange={(e) => setFilterKeyword(e.target.value)}
+        />
+      </div>
+
+      {/* Company List */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {companies.map((company) => (
+        {filteredCompanies.map((company) => (
           <div
             key={company._id}
             className="bg-white border border-gray-300 rounded-md p-4 hover:shadow-md transition-shadow"
@@ -85,6 +111,10 @@ export default function ShowCompanies() {
           </div>
         ))}
       </div>
+
+      {filteredCompanies.length === 0 && (
+        <p className="text-center text-gray-600 mt-6">No companies match your search criteria.</p>
+      )}
     </div>
   );
 }
